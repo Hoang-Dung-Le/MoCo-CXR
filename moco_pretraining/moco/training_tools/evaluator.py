@@ -18,6 +18,8 @@ from scipy.special import softmax
 from .meters import AverageMeter
 from .meters import ProgressMeter
 from .combiner import detach_tensor
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+import matplotlib.pyplot as plt
 
 '''
 def pred_accuracy(output, target, k):
@@ -127,7 +129,7 @@ class Evaluator:
                 
                 # JBY: For simplicity do losses first
                 losses.update(loss.item(), images.size(0))
-
+                # print(output, "+++++++++++++++++++++++++++++++++++++++",target)
                 for metric in self.metrics:
                     args = [output, target, *self.metrics[metric]['args']]    
                     metric_func = globals()[self.metrics[metric]['func']]
@@ -148,8 +150,32 @@ class Evaluator:
             progress.display(i + 1)
 
         all_output = np.concatenate(all_output)
-        all_gt = np.concatenate(all_gt)
+        # _, preds = torch.max(all_output, 1)
+        # for i in all_output:
+        # y = [torch.max(all_output).item()]
+        # import tensorflow as tf
+        # for tensor in all_output:
+        #     print(torch.Tensor(tensor))
 
+        y = [torch.argmax(torch.Tensor(tensor)).item() for tensor in all_output]
+        
+        all_gt = np.concatenate(all_gt)
+        # print(y)
+        # print("==============================")
+        
+        # print(all_gt)
+        # 1/0
+        # from torchmetrics.functional.classification import BinaryConfusionMatrix
+        # matrix = multiclass_confusion_matrix(all_output, all_gt, num_classes=2)
+        cf_matrix = confusion_matrix(all_gt, y)
+        print(cf_matrix)
+        print(classification_report(all_gt, y))
+        print(accuracy_score(all_gt, y))
+        # from sklearn.metrics import ConfusionMatrixDisplay
+        # disp = ConfusionMatrixDisplay(confusion_matrix=cf_matrix)
+
+        # disp.plot(cmap=plt.cm.Blues)
+        # plt.show()
         for metric in self.metrics:
             args = [all_output, all_gt, *self.metrics[metric]['args']]    
             metric_func = globals()[self.metrics[metric]['func']]
@@ -159,5 +185,5 @@ class Evaluator:
 
             self.metric_best_vals[metric] = max(metric_meters[metric].avg,
                                                 self.metric_best_vals[metric])
-
+        print("====================================", self.metrics)
         progress.display(i + 1, summary=True)

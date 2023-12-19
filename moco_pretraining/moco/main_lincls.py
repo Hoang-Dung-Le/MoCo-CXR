@@ -42,13 +42,13 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet50',
                         ' | '.join(model_names) +
                         ' (default: resnet50)')
 # JBY: Decrease number of workers
-parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
-                    help='number of data loading workers (default: 32)')
-parser.add_argument('--epochs', default=50, type=int, metavar='N',
+parser.add_argument('-j', '--workers', default=12, type=int, metavar='N',
+                    help='number of data loading workers (default: 12)')
+parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=48, type=int,
+parser.add_argument('-b', '--batch-size', default=32, type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
@@ -115,9 +115,9 @@ parser.add_argument('--cos', action='store_true',
 parser.add_argument('--cos-rate', default=4, type=float, metavar='CR',
                     help='Scaling factor for cos, higher the slower the decay')
 
-parser.add_argument('--img-size', dest='img_size', type=int, default=320,
+parser.add_argument('--img-size', dest='img_size', type=int, default=299,
                     help='image size (Chexpert=320)')
-parser.add_argument('--crop', dest='crop', type=int, default=320,
+parser.add_argument('--crop', dest='crop', type=int, default=299,
                     help='image crop (Chexpert=320)')
 parser.add_argument('--maintain-ratio', dest='maintain_ratio', action='store_true',
                     help='whether to maintain aspect ratio or scale the image')
@@ -277,6 +277,7 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
 
     # optimize only the linear classifier
     parameters = list(filter(lambda p: p.requires_grad, model.parameters()))
+
     assert len(parameters) == 2  # fc.weight, fc.bias
     
     if args.optimizer == 'sgd':
@@ -301,17 +302,17 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
                 checkpoint = torch.load(args.resume, map_location=loc)
             args.start_epoch = checkpoint['epoch']
 
-            # TODO JBY: Handle resume for current metrics setup
-            raise NotImplementedError('Resuming not supported yet!')
+            # # TODO JBY: Handle resume for current metrics setup
+            # raise NotImplementedError('Resuming not supported yet!')
 
-            for metric in best_metrics:
-                best_metrics[metric][0] = checkpoint[f'best_metrics'][metric]
-            if args.gpu is not None:
-                # best_acc_val may be from a checkpoint from a different GPU
-                # best_acc_val = best_acc_val.to(args.gpu)
-                # best_acc_test = best_acc_test.to(args.gpu)
-                for metric in best_metrics:
-                    best_metrics[metric][0] = best_metrics[metric][0].to(args.gpu)
+            # for metric in best_metrics:
+            #     best_metrics[metric][0] = checkpoint[f'best_metrics'][metric]
+            # if args.gpu is not None:
+            #     # best_acc_val may be from a checkpoint from a different GPU
+            #     # best_acc_val = best_acc_val.to(args.gpu)
+            #     # best_acc_test = best_acc_test.to(args.gpu)
+            #     for metric in best_metrics:
+            #         best_metrics[metric][0] = best_metrics[metric][0].to(args.gpu)
 
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
@@ -443,6 +444,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
     BatchNorm in train mode may revise running mean/std (even if it receives
     no gradient), which are part of the model parameters too.
     """
+    # print(model.named_parameters())
     # JBY: If semi-supervised, we tune on the entire model instead
     if args.semi_supervised:
         model.train()
@@ -555,3 +557,8 @@ def adjust_learning_rate(optimizer, epoch, args):
 
 if __name__ == '__main__':
     main()
+
+
+# Train ImageNet python main_lincls.py -a resnet34 --lr 30.0 --batch-size 32  --dist-url 'tcp://localhost:10001' --multiprocessing-distributed  --world-size 1 --rank 0  --train_data ../../data/5classes_25_Apr/train_set/  --val_data ../../data/5classes_25_Apr/valid_set/  --test_data ../../data/5classes_25_Apr/test_set/ --from-imagenet  --exp-name 5class_ImageNet_lincls_RESNET34_27April >> ./Result_26_April/5class_Resnet34_ImageNet.txt
+# Evaluation python main_lincls.py -a resnet34 --lr 30.0 --batch-size 32 --resume ./Result_26_April/5class_Resnet34_ImageNetmodel_best.pth.tar -e  --dist-url 'tcp://localhost:10001' --multiprocessing-distributed  --world-size 1 --rank 0  --train_data ../../data/5classes_25_Apr/train_set/  --val_data ../../data/5classes_25_Apr/valid_set/  --test_data ../../data/5classes_25_Apr/test_set/ --exp-name lincls_mobilev2_covid_26Apr
+# Train SSL python main_lincls.py -a resnet34 --lr 30.0 --batch-size 32 --pretrained Resnet34_SSL_checkpoint_0020.pth.tar  --dist-url 'tcp://localhost:10001' --multiprocessing-distributed  --world-size 1 --rank 0  --train_data ../../data/5classes_25_Apr/train_set/  --val_data ../../data/5classes_25_Apr/valid_set/  --test_data ../../data/5classes_25_Apr/test_set/ --exp-name lincls_resnet34_5class_SSL >> ./Result_26_April/5class_Resnet34_SSL.txt
