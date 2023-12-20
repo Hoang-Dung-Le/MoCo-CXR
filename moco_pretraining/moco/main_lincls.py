@@ -423,17 +423,17 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         
     
 
-    evaluator = eval_tools.Evaluator(model, criterion, best_metrics,\
-                                     {'train': train_loader,\
-                                      'valid': val_loader,\
-                                      'test': test_loader}, args)
+    # evaluator = eval_tools.Evaluator(model, criterion, best_metrics,\
+    #                                  {'train': train_loader,\
+    #                                   'valid': val_loader,\
+    #                                   'test': test_loader}, args)
 
-    if args.evaluate:
-        evaluator.evaluate('valid', 0)
-        evaluator.evaluate('test', 0)
-        return
+    # if args.evaluate:
+    #     evaluator.evaluate('valid', 0)
+    #     evaluator.evaluate('test', 0)
+    #     return
     
-    evaluator.evaluate('test', 0)
+    # evaluator.evaluate('test', 0)
 
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -443,28 +443,28 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args, best_metrics)
 
-        evaluator.evaluate('valid', epoch)
-        evaluator.evaluate('test', 0)       # But we should technically not optimize for this
+        # evaluator.evaluate('valid', epoch)
+        # evaluator.evaluate('test', 0)       # But we should technically not optimize for this
 
-        is_best = evaluator.metric_best_vals[args.best_metric] > best_metric_val
-        best_metric_val = max(best_metric_val, evaluator.metric_best_vals[args.best_metric])
+        # is_best = evaluator.metric_best_vals[args.best_metric] > best_metric_val
+        # best_metric_val = max(best_metric_val, evaluator.metric_best_vals[args.best_metric])
 
         if not args.multiprocessing_distributed or \
             (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 and \
              ((epoch % args.save_epoch == 0) or (epoch == args.epochs - 1))):
-            save_checkpoint(checkpoint_folder, {
-                'epoch': epoch + 1,
-                'arch': args.arch,
-                'state_dict': model.state_dict(),
-                'best_metrics': {metric: evaluator.metric_best_vals[metric] for metric in evaluator.metric_best_vals},
-                'best_metric_val': best_metric_val,
-                'optimizer' : optimizer.state_dict(),
-            }, is_best)
+            # save_checkpoint(checkpoint_folder, {
+            #     'epoch': epoch + 1,
+            #     'arch': args.arch,
+            #     'state_dict': model.state_dict(),
+            #     'best_metrics': {metric: evaluator.metric_best_vals[metric] for metric in evaluator.metric_best_vals},
+            #     'best_metric_val': best_metric_val,
+            #     'optimizer' : optimizer.state_dict(),
+            # }, is_best)
             if epoch == args.start_epoch and args.pretrained:
                 sanity_check(model.state_dict(), args.pretrained,
                              args.semi_supervised)
 
-    evaluator.evaluate('test', epoch + 1)
+    # evaluator.evaluate('test', epoch + 1)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
