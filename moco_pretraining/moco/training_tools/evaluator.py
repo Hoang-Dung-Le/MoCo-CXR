@@ -59,12 +59,12 @@ def decorator_detach_tensor(function):
         return result
     return wrapper
 
-@decorator_detach_tensor
-def topk_acc(output, target, k):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
-    argsorted_out = np.argsort(output)[:,-k:]
-    matching = np.asarray(np.any(argsorted_out.T == target, axis=0))
-    return matching.mean(dtype='f')
+# @decorator_detach_tensor
+# def topk_acc(output, target, k):
+#     """Computes the accuracy over the k top predictions for the specified values of k"""
+#     argsorted_out = np.argsort(output)[:,-k:]
+#     matching = np.asarray(np.any(argsorted_out.T == target, axis=0))
+#     return matching.mean(dtype='f')
 
 
 # @decorator_detach_tensor
