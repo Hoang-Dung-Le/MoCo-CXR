@@ -156,10 +156,10 @@ class Evaluator:
                     metric_func = globals()[self.metrics[metric]['func']]
                     # result = metric_func(*args)
 
-                    auc_each_class = metric_func(*args)
-                    auc_each_class_array = np.array(auc_each_class)
-                    result = np.average(auc_each_class_array[auc_each_class_array != 0])
-                    print(result)
+                    result = metric_func(*args)
+                    # auc_each_class_array = np.array(auc_each_class)
+                    # result = np.average(auc_each_class_array[auc_each_class_array != 0])
+                    # print(result)
                     
                     metric_meters[metric].update(result, images.size(0))
             
