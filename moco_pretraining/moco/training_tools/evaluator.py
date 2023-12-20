@@ -217,8 +217,8 @@ class Evaluator:
             result = metric_func(*args)
             
             metric_meters[metric].update(result, images.size(0))
-            print("---")
-            print(metric_meters[metric].avg)
+            # print("---")
+            # print(metric_meters[metric].avg)
             print(self.metric_best_vals[metric])
             self.metric_best_vals[metric] = max(metric_meters[metric].avg[0],
                                                 self.metric_best_vals[metric])
