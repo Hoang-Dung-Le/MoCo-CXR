@@ -54,7 +54,8 @@ def decorator_detach_tensor(function):
         target = detach_tensor(args[1])
         args = args[2:]
 
-        result = function(output, target, *args, **kwargs)
+        # result = function(output, target, *args, **kwargs)
+        result = function(output, target)
         return result
     return wrapper
 
