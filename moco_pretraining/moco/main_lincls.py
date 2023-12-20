@@ -206,9 +206,9 @@ def main():
 def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     global best_metrics
     global best_metric_val
-    if args.binary:
+    # if args.binary:
         # best_metrics.update({'auc' : {'func': 'compute_auc_binary', 'format': ':6.2f', 'args': []}})
-        best_metrics.update({'auc' : {'func': 'computeAUROC', 'format': ':6.2f', 'args': []}})
+    best_metrics.update({'auc' : {'func': 'computeAUROC', 'format': ':6.2f', 'args': []}})
     args.gpu = gpu
 
     # suppress printing if not master
