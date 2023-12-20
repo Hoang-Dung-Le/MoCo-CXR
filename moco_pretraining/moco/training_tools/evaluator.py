@@ -79,7 +79,7 @@ def decorator_detach_tensor(function):
 @decorator_detach_tensor
 def computeAUROC(dataGT, dataPRED, classCount=14):
     outAUROC = []
-    print(dataGT.shape, dataPRED.shape)
+    # print(dataGT.shape, dataPRED.shape)
     # print("ok toi da chay")
     for i in range(classCount):
         try:
@@ -159,11 +159,15 @@ class Evaluator:
                     # result = metric_func(*args)
 
                     auc_each_class = metric_func(*args)
-                    print("day la auc_each_class", auc_each_class)
+                    
                     auc_each_class_array = np.array(auc_each_class)
-                    print("day la auc_each_class_array", auc_each_class_array)
-                    result = np.average(auc_each_class_array[auc_each_class_array != 0])
-                    print("day la result", result)
+                    
+                    # result = np.average(auc_each_class_array[auc_each_class_array != 0])
+                    if np.any(auc_each_class_array != 0):
+                        result = np.average(auc_each_class_array[auc_each_class_array != 0])
+                    else:
+                        result = 0.0
+                    
                     
                     metric_meters[metric].update(result, images.size(0))
             
