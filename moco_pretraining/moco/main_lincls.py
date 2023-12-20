@@ -27,7 +27,7 @@ import training_tools.evaluator as eval_tools
 from training_tools.meters import AverageMeter
 from training_tools.meters import ProgressMeter
 
-from .utils.datasets import build_dataset_chest_xray
+from utils.datasets import build_dataset_chest_xray
 
 import aihc_utils.storage_util as storage_util
 import aihc_utils.image_transform as image_transform
@@ -361,9 +361,9 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     # traindir = os.path.join(args.data, 'train')
     # valdir = os.path.join(args.data, 'val')
 
-    traindir = args.train_data
-    valdir = args.val_data
-    testdir = args.test_data
+    # traindir = args.train_data
+    # valdir = args.val_data
+    # testdir = args.test_data
 
     if args.aug_setting == 'moco_v2':
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
