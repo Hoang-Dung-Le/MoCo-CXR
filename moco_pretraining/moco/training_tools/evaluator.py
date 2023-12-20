@@ -140,7 +140,7 @@ class Evaluator:
                     images = images.cuda(self.args.gpu, non_blocking=True)
                 target = target.cuda(self.args.gpu, non_blocking=True)
                 all_gt.append(target.cpu())        
-                print("len cua tar get", len(target))
+                # print("len cua tar get", len(target))
                 # compute output
                 output = self.model(images)
                 all_output.append(output.cpu())
