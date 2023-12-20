@@ -159,9 +159,10 @@ parser.add_argument('--aug-setting', default='chexpert',
                     choices=['moco_v1', 'moco_v2', 'chexpert'],
                     help='version of data augmentation to use')
                     
-best_metrics = {'acc@1': {'func': 'topk_acc', 'format': ':6.2f', 'args': [1]}}
+# best_metrics = {'acc@1': {'func': 'topk_acc', 'format': ':6.2f', 'args': [1]}}
                 # 'acc@5': {'func': 'topk_acc', 'format': ':6.2f', 'args': [5]},
                 #'auc': {'func': 'compute_auc_binary', 'format': ':6.2f', 'args': []}}
+best_metrics = ({'auc' : {'func': 'computeAUROC', 'format': ':6.2f', 'args': []}})
 best_metric_val = 0
 
 
