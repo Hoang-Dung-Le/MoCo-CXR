@@ -66,15 +66,35 @@ def topk_acc(output, target, k):
     return matching.mean(dtype='f')
 
 
+# @decorator_detach_tensor
+# def compute_auc_binary(output, target):
+#     #assuming output and target are all vectors for binary case
+#     try:
+#         o = softmax(output, axis=1)
+#         auc = roc_auc_score(target, o[:,1])
+#     except:
+#         return -1
+#     return auc
 @decorator_detach_tensor
-def compute_auc_binary(output, target):
-    #assuming output and target are all vectors for binary case
-    try:
-        o = softmax(output, axis=1)
-        auc = roc_auc_score(target, o[:,1])
-    except:
-        return -1
-    return auc
+def computeAUROC(dataGT, dataPRED, classCount=14):
+    outAUROC = []
+    # print(dataGT.shape, dataPRED.shape)
+    for i in range(classCount):
+        try:
+            outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
+        except:
+            outAUROC.append(0.)
+    print(outAUROC)
+    return outAUROC
+
+def accuracy(output, target, topk=(1,)):
+    """Computes the accuracy over the k top predictions for the specified values of k"""
+    maxk = max(topk)
+    batch_size = target.size(0)
+    _, pred = output.topk(maxk, 1, True, True)
+    pred = pred.t()
+    correct = pred.eq(target.reshape(1, -1).expand_as(pred))
+    return [correct[:k].reshape(-1).float().sum(0) * 100. / batch_size for k in topk]
 
 
 class Evaluator:

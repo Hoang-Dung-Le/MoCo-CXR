@@ -27,6 +27,8 @@ import training_tools.evaluator as eval_tools
 from training_tools.meters import AverageMeter
 from training_tools.meters import ProgressMeter
 
+from .utils.datasets import build_dataset_chest_xray
+
 import aihc_utils.storage_util as storage_util
 import aihc_utils.image_transform as image_transform
 
@@ -93,12 +95,40 @@ parser.add_argument('--pretrained', default='', type=str,
 # Stanford AIHC modification
 parser.add_argument('--exp-name', dest='exp_name', type=str, default='exp',
                     help='Experiment name')
-parser.add_argument('--train_data', metavar='DIR',
-                    help='path to train folder')
-parser.add_argument('--val_data', metavar='DIR',
-                    help='path to val folder')
-parser.add_argument('--test_data', metavar='DIR',
-                    help='path to test folder')
+# parser.add_argument('--train_data', metavar='DIR',
+#                     help='path to train folder')
+# parser.add_argument('--val_data', metavar='DIR',
+#                     help='path to val folder')
+# parser.add_argument('--test_data', metavar='DIR',
+#                     help='path to test folder')
+
+parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/', type=str,
+                        help='dataset path')
+
+parser.add_argument("--train_list", default=None, type=str, help="file for train list")
+parser.add_argument("--val_list", default=None, type=str, help="file for val list")
+parser.add_argument("--test_list", default=None, type=str, help="file for test list")
+parser.add_argument("--build_timm_transform", action='store_true', default=False)
+parser.add_argument("--aug_strategy", default='default', type=str, help="strategy for data augmentation")
+parser.add_argument("--dataset", default='chestxray', type=str)
+parser.add_argument('--input_size', default=224, type=int,
+                        help='images input size')
+parser.add_argument('--src', action='store_true')
+parser.add_argument("--norm_stats", default=None, type=str)
+parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
+                        help='Random erase prob (default: 0.25)')
+parser.add_argument('--remode', type=str, default='pixel',
+                    help='Random erase mode (default: "pixel")')
+parser.add_argument('--recount', type=int, default=1,
+                    help='Random erase count (default: 1)')
+parser.add_argument('--resplit', action='store_true', default=False,
+                        help='Do not random erase first (clean) augmentation split')
+
+parser.add_argument('--color_jitter', type=float, default=None, metavar='PCT',
+                        help='Color jitter factor (enabled only when not using Auto/RandAug)')
+parser.add_argument('--aa', type=str, default='rand-m9-mstd0.5-inc1', metavar='NAME',
+                        help='Use AutoAugment policy. "v0" or "original". " + "(default: rand-m9-mstd0.5-inc1)'),
+
 parser.add_argument('--save-epoch', dest='save_epoch', type=int, default=1,
                     help='Number of epochs per checkpoint save')
 parser.add_argument('--from-imagenet', dest='from_imagenet', action='store_true',
@@ -140,7 +170,7 @@ def main():
     args = parser.parse_args()
     print(args)
     # checkpoint_folder = storage_util.get_storage_folder(args.exp_name, f'moco_lincls')
-    checkpoint_folder = '/content/drive/MyDrive/LUAN_VAN/checkpoint_moco/'
+    checkpoint_folder = '/content/drive/MyDrive/dataa/LUAN_VAN/checkpoint_moco_multilabels/'
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -177,7 +207,8 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     global best_metrics
     global best_metric_val
     if args.binary:
-        best_metrics.update({'auc' : {'func': 'compute_auc_binary', 'format': ':6.2f', 'args': []}})
+        # best_metrics.update({'auc' : {'func': 'compute_auc_binary', 'format': ':6.2f', 'args': []}})
+        best_metrics.update({'auc' : {'func': 'computeAUROC', 'format': ':6.2f', 'args': []}})
     args.gpu = gpu
 
     # suppress printing if not master
@@ -207,11 +238,13 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         if name not in ['fc.weight', 'fc.bias']:
             param.requires_grad = False
 
-    num_classes = len(os.listdir(args.val_data)) #assume in imagenet format, so length == num folders/classes
-    if num_classes == 2 and not args.binary:
-        raise ValueError(f'Folder has {num_classes} classes, but you did not use "--binary" flag')
-    elif num_classes != 2 and args.binary:
-        raise ValueError(f'Folder has {num_classes} classes, but you used "--binary" flag')
+    # num_classes = len(os.listdir(args.val_data)) #assume in imagenet format, so length == num folders/classes
+    # if num_classes == 2 and not args.binary:
+    #     raise ValueError(f'Folder has {num_classes} classes, but you did not use "--binary" flag')
+    # elif num_classes != 2 and args.binary:
+    #     raise ValueError(f'Folder has {num_classes} classes, but you used "--binary" flag')
+            
+    num_classes = 14
 
     # init the fc layer
     if args.binary:
@@ -273,7 +306,8 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
             model = torch.nn.DataParallel(model).cuda()
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    # criterion = nn.CrossEntropyLoss().cuda(args.gpu)
+    criterion = nn.BCEWithLogitsLoss().cuda(args.gpu)
 
     # optimize only the linear classifier
     parameters = list(filter(lambda p: p.requires_grad, model.parameters()))
@@ -334,46 +368,60 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     if args.aug_setting == 'moco_v2':
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-        train_augmentation = [
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ]
+        
+    dataset_train = build_dataset_chest_xray(split='train', args=args)
+    dataset_val = build_dataset_chest_xray(split='val', args=args)
+    dataset_test = build_dataset_chest_xray(split='test', args=args)
+    #     train_augmentation = [
+    #         transforms.RandomResizedCrop(224),
+    #         transforms.RandomHorizontalFlip(),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]
 
-        test_augmentation = [
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ]
-    elif args.aug_setting == 'chexpert':
-        train_augmentation = image_transform.get_transform(args, training=True)
-        test_augmentation = image_transform.get_transform(args, training=False)
+    #     test_augmentation = [
+    #         transforms.Resize(256),
+    #         transforms.CenterCrop(224),
+    #         transforms.ToTensor(),
+    #         normalize,
+    #     ]
+    # elif args.aug_setting == 'chexpert':
+    #     train_augmentation = image_transform.get_transform(args, training=True)
+    #     test_augmentation = image_transform.get_transform(args, training=False)
 
 
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose(train_augmentation))
+    # train_dataset = datasets.ImageFolder(
+    #     traindir,
+    #     transforms.Compose(train_augmentation))
 
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
-    else:
-        train_sampler = None
+    train_loader = build_dataset_chest_xray(split='train', args=args)
+    val_loader = build_dataset_chest_xray(split='val', args=args)
+    test_loader = build_dataset_chest_xray(split='test', args=args)
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
-        num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+    # if args.distributed:
+    #     train_sampler = torch.utils.data.distributed.DistributedSampler(train_loader)
+    # else:
+    #     train_sampler = None
 
-    val_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(valdir, transforms.Compose(test_augmentation)),
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
+    train_sampler = None
 
-    test_loader = torch.utils.data.DataLoader(
-        datasets.ImageFolder(testdir, transforms.Compose(test_augmentation)),
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
+    
+
+    # train_loader = torch.utils.data.DataLoader(
+    #     train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
+    #     num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+
+    # val_loader = torch.utils.data.DataLoader(
+    #     datasets.ImageFolder(valdir, transforms.Compose(test_augmentation)),
+    #     batch_size=args.batch_size, shuffle=False,
+    #     num_workers=args.workers, pin_memory=True)
+
+    # test_loader = torch.utils.data.DataLoader(
+    #     datasets.ImageFolder(testdir, transforms.Compose(test_augmentation)),
+    #     batch_size=args.batch_size, shuffle=False,
+    #     num_workers=args.workers, pin_memory=True)
+        
+    
 
     evaluator = eval_tools.Evaluator(model, criterion, best_metrics,\
                                      {'train': train_loader,\
