@@ -152,7 +152,7 @@ class Evaluator:
                 # print(output, "+++++++++++++++++++++++++++++++++++++++",target)
             
                 for metric in self.metrics:
-                    args = [output, target, *self.metrics[metric]['args']]    
+                    args = [target, output, *self.metrics[metric]['args']]    
                     metric_func = globals()[self.metrics[metric]['func']]
                     # result = metric_func(*args)
 
