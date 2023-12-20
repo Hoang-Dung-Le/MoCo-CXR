@@ -157,11 +157,11 @@ class Evaluator:
                     # result = metric_func(*args)
 
                     auc_each_class = metric_func(*args)
-                    print(auc_each_class)
+                    print("day la auc_each_class", auc_each_class)
                     auc_each_class_array = np.array(auc_each_class)
-                    print(auc_each_class_array)
+                    print("day la auc_each_class_array", auc_each_class_array)
                     result = np.average(auc_each_class_array[auc_each_class_array != 0])
-                    print(result)
+                    print("day la result", result)
                     
                     metric_meters[metric].update(result, images.size(0))
             
