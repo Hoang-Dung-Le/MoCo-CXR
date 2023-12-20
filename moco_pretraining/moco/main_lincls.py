@@ -247,8 +247,9 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     num_classes = 14
 
     # init the fc layer
-    if args.binary:
-        model.fc = nn.Linear(model.fc.in_features, num_classes)
+    # if args.binary:
+    #     model.fc = nn.Linear(model.fc.in_features, num_classes)
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
     model.fc.weight.data.normal_(mean=0.0, std=0.01)
     model.fc.bias.data.zero_()
 
@@ -369,9 +370,9 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
         
-    dataset_train = build_dataset_chest_xray(split='train', args=args)
-    dataset_val = build_dataset_chest_xray(split='val', args=args)
-    dataset_test = build_dataset_chest_xray(split='test', args=args)
+    # dataset_train = build_dataset_chest_xray(split='train', args=args)
+    # dataset_val = build_dataset_chest_xray(split='val', args=args)
+    # dataset_test = build_dataset_chest_xray(split='test', args=args)
     #     train_augmentation = [
     #         transforms.RandomResizedCrop(224),
     #         transforms.RandomHorizontalFlip(),
@@ -407,9 +408,9 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
 
     
 
-    # train_loader = torch.utils.data.DataLoader(
-    #     train_dataset, batch_size=args.batch_size, shuffle=(train_sampler is None),
-    #     num_workers=args.workers, pin_memory=True, sampler=train_sampler)
+    train_loader = torch.utils.data.DataLoader(
+        train_loader, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     # val_loader = torch.utils.data.DataLoader(
     #     datasets.ImageFolder(valdir, transforms.Compose(test_augmentation)),
