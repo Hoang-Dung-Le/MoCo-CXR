@@ -55,7 +55,7 @@ def decorator_detach_tensor(function):
         args = args[2:]
 
         # result = function(output, target, *args, **kwargs)
-        result = function(output, target)
+        result = computeAUROC(output, target)
         return result
     return wrapper
 
@@ -79,7 +79,7 @@ def topk_acc(output, target, k):
 @decorator_detach_tensor
 def computeAUROC(dataGT, dataPRED, classCount=14):
     outAUROC = []
-    # print(dataGT.shape, dataPRED.shape)
+    print(dataGT.shape, dataPRED.shape)
     # print("ok toi da chay")
     for i in range(classCount):
         try:
