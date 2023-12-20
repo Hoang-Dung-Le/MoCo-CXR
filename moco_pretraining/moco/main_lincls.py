@@ -412,15 +412,15 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         train_loader, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
-    # val_loader = torch.utils.data.DataLoader(
-    #     datasets.ImageFolder(valdir, transforms.Compose(test_augmentation)),
-    #     batch_size=args.batch_size, shuffle=False,
-    #     num_workers=args.workers, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(
+        val_loader,
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
 
-    # test_loader = torch.utils.data.DataLoader(
-    #     datasets.ImageFolder(testdir, transforms.Compose(test_augmentation)),
-    #     batch_size=args.batch_size, shuffle=False,
-    #     num_workers=args.workers, pin_memory=True)
+    test_loader = torch.utils.data.DataLoader(
+        test_loader,
+        batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True)
         
     
 
@@ -429,12 +429,12 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
                                       'valid': val_loader,\
                                       'test': test_loader}, args)
 
-    # if args.evaluate:
-    #     evaluator.evaluate('valid', 0)
-    #     evaluator.evaluate('test', 0)
-    #     return
+    if args.evaluate:
+        evaluator.evaluate('valid', 0)
+        evaluator.evaluate('test', 0)
+        return
     
-    # evaluator.evaluate('test', 0)
+    evaluator.evaluate('test', 0)
 
     for epoch in range(args.start_epoch, args.epochs):
         # if args.distributed:

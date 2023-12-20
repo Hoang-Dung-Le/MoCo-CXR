@@ -150,12 +150,17 @@ class Evaluator:
                 # JBY: For simplicity do losses first
                 losses.update(loss.item(), images.size(0))
                 # print(output, "+++++++++++++++++++++++++++++++++++++++",target)
+                print("vao vong for")
                 for metric in self.metrics:
                     args = [output, target, *self.metrics[metric]['args']]    
                     metric_func = globals()[self.metrics[metric]['func']]
                     result = metric_func(*args)
+
+                    print("me tric o day")
+                    print(result)
                     
                     metric_meters[metric].update(result, images.size(0))
+                print("ket thuc")
 
                 # measure elapsed time
                 batch_time.update(time.time() - end)
@@ -187,10 +192,10 @@ class Evaluator:
         # 1/0
         # from torchmetrics.functional.classification import BinaryConfusionMatrix
         # matrix = multiclass_confusion_matrix(all_output, all_gt, num_classes=2)
-        cf_matrix = confusion_matrix(all_gt, y)
-        print(cf_matrix)
-        print(classification_report(all_gt, y))
-        print(accuracy_score(all_gt, y))
+        # cf_matrix = confusion_matrix(all_gt, y)
+        # print(cf_matrix)
+        # print(classification_report(all_gt, y))
+        # print(accuracy(all_gt, y))
         # from sklearn.metrics import ConfusionMatrixDisplay
         # disp = ConfusionMatrixDisplay(confusion_matrix=cf_matrix)
 
