@@ -79,23 +79,22 @@ def topk_acc(output, target, k):
 def computeAUROC(dataGT, dataPRED, classCount=14):
     outAUROC = []
     # print(dataGT.shape, dataPRED.shape)
-    print("ok toi da chay")
+    # print("ok toi da chay")
     for i in range(classCount):
         try:
             outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
         except:
             outAUROC.append(0.)
-    print(outAUROC)
     return outAUROC
 
-def accuracy(output, target, topk=(1,)):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
-    maxk = max(topk)
-    batch_size = target.size(0)
-    _, pred = output.topk(maxk, 1, True, True)
-    pred = pred.t()
-    correct = pred.eq(target.reshape(1, -1).expand_as(pred))
-    return [correct[:k].reshape(-1).float().sum(0) * 100. / batch_size for k in topk]
+# def accuracy(output, target, topk=(1,)):
+#     """Computes the accuracy over the k top predictions for the specified values of k"""
+#     maxk = max(topk)
+#     batch_size = target.size(0)
+#     _, pred = output.topk(maxk, 1, True, True)
+#     pred = pred.t()
+#     correct = pred.eq(target.reshape(1, -1).expand_as(pred))
+#     return [correct[:k].reshape(-1).float().sum(0) * 100. / batch_size for k in topk]
 
 
 class Evaluator:
@@ -141,7 +140,7 @@ class Evaluator:
                     images = images.cuda(self.args.gpu, non_blocking=True)
                 target = target.cuda(self.args.gpu, non_blocking=True)
                 all_gt.append(target.cpu())        
-
+                print("len cua tar get", len(target))
                 # compute output
                 output = self.model(images)
                 all_output.append(output.cpu())
@@ -151,21 +150,19 @@ class Evaluator:
                 # JBY: For simplicity do losses first
                 losses.update(loss.item(), images.size(0))
                 # print(output, "+++++++++++++++++++++++++++++++++++++++",target)
-                print("vao vong for")
+            
                 for metric in self.metrics:
                     args = [output, target, *self.metrics[metric]['args']]    
                     metric_func = globals()[self.metrics[metric]['func']]
                     # result = metric_func(*args)
 
-                    auc_each_class = metric_func(*args)
+                    auc_each_class = metric_func(target,output)
                     auc_each_class_array = np.array(auc_each_class)
                     result = np.average(auc_each_class_array[auc_each_class_array != 0])
-
-                    print("me tric o day")
                     print(result)
                     
                     metric_meters[metric].update(result, images.size(0))
-                print("ket thuc")
+            
 
                 # measure elapsed time
                 batch_time.update(time.time() - end)
