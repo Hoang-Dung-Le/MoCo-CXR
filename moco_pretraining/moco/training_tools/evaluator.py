@@ -223,4 +223,4 @@ class Evaluator:
             self.metric_best_vals[metric] = max(metric_meters[metric].avg[0],
                                                 self.metric_best_vals[metric])
         print("====================================", self.metrics)
-        progress.display(i + 1, summary=True)
+        # progress.display(i + 1, summary=True)
