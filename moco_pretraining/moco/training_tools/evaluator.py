@@ -79,6 +79,7 @@ def topk_acc(output, target, k):
 def computeAUROC(dataGT, dataPRED, classCount=14):
     outAUROC = []
     # print(dataGT.shape, dataPRED.shape)
+    print("ok toi da chay")
     for i in range(classCount):
         try:
             outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
@@ -154,7 +155,11 @@ class Evaluator:
                 for metric in self.metrics:
                     args = [output, target, *self.metrics[metric]['args']]    
                     metric_func = globals()[self.metrics[metric]['func']]
-                    result = metric_func(*args)
+                    # result = metric_func(*args)
+
+                    auc_each_class = metric_func(*args)
+                    auc_each_class_array = np.array(auc_each_class)
+                    result = np.average(auc_each_class_array[auc_each_class_array != 0])
 
                     print("me tric o day")
                     print(result)
