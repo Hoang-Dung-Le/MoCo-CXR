@@ -202,6 +202,29 @@ def evaluate(val_loader, model, computeAUROC):
 
     return result
 
+def evaluate_on_train(images, targets, model, computeAUROC):
+    model.eval()
+
+    gt = []
+    preds = []
+
+    with torch.no_grad():
+        outputs = model(images).detach().cpu().numpy()
+        targets = targets.cpu().numpy()
+        
+        gt.append(targets)
+        preds.append(outputs)
+        
+    gt = np.concatenate(gt, axis=0)
+    preds = np.concatenate(preds, axis=0)
+
+    auroc = computeAUROC(gt, preds)
+
+    auc_each_class_array = np.array(auroc)
+    result = np.average(auc_each_class_array[auc_each_class_array != 0])
+
+    return result
+
 def main():
 
     args = parser.parse_args()
@@ -546,6 +569,10 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
     all_gt = []
 
     end = time.time()
+
+    auc_tong_hop = 0
+    mau_so = 0
+
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
@@ -564,11 +591,17 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         # measure accuracy and record loss
         losses.update(loss.item(), images.size(0))
 
+        auc = evaluate_on_train(images, target, model, computeAUROC)
+
+        # print("epoch: ", i + 1)
+        auc_tong_hop += auc
+        mau_so += 1
+
         # acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        for metric in best_metrics:
-            eval_args = [output, target, *best_metrics[metric]['args']]
-            metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
-            result = metric_func(*eval_args)
+        # for metric in best_metrics:
+        #     eval_args = [output, target, *best_metrics[metric]['args']]
+        #     metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
+        #     result = metric_func(*eval_args)
             
             # metric_meters[metric].update(result, images.size(0))
 
@@ -580,19 +613,21 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
+    
+    print("Epoch: ", epoch, " auc : ", auc_tong_hop/mau_so)
 
-        if i % args.print_freq == 0:
-            progress.display(i)
+    #     if i % args.print_freq == 0:
+    #         progress.display(i)
 
-    # progress.display(i + 1)
+    # # progress.display(i + 1)
 
-    all_output = np.concatenate(all_output)
-    all_gt = np.concatenate(all_gt)
+    # all_output = np.concatenate(all_output)
+    # all_gt = np.concatenate(all_gt)
 
-    for metric in best_metrics:
-        args = [all_output, all_gt, *best_metrics[metric]['args']]    
-        metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
-        result = metric_func(*args)
+    # for metric in best_metrics:
+    #     args = [all_output, all_gt, *best_metrics[metric]['args']]    
+    #     metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
+    #     result = metric_func(*args)
         
         # metric_meters[metric].update(result, images.size(0))
     # progress.display(i + 1, summary=True)
