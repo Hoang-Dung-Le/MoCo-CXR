@@ -492,8 +492,8 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
     
     # evaluator.evaluate('test', 0)
 
-    mRocAUC = evaluate(val_loader, model, computeAUROC)
-    print(mRocAUC)
+    # mRocAUC = evaluate(val_loader, model, computeAUROC)
+    # print(mRocAUC)
 
     for epoch in range(args.start_epoch, args.epochs):
         # if args.distributed:
@@ -510,7 +510,7 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         # best_metric_val = max(best_metric_val, evaluator.metric_best_vals[args.best_metric])
 
         mRocAUC = evaluate(val_loader, model, computeAUROC)
-        print(mRocAUC)
+        print("auc: ", mRocAUC)
 
         if not args.multiprocessing_distributed or \
             (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 and \
