@@ -31,6 +31,7 @@ from utils.datasets import build_dataset_chest_xray
 
 import aihc_utils.storage_util as storage_util
 import aihc_utils.image_transform as image_transform
+from sklearn.metrics import roc_auc_score
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -165,6 +166,38 @@ parser.add_argument('--aug-setting', default='chexpert',
 best_metrics = ({'auc' : {'func': 'computeAUROC', 'format': ':6.2f', 'args': []}})
 best_metric_val = 0
 
+
+def computeAUROC(dataGT, dataPRED, classCount=14):
+    outAUROC = []
+    # print(dataGT.shape, dataPRED.shape)
+    # print("ok toi da chay")
+    for i in range(classCount):
+        try:
+            outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
+        except:
+            outAUROC.append(0.)
+    return outAUROC
+
+def evaluate(val_loader, model, computeAUROC):
+    model.eval()
+
+    gt = []
+    preds = []
+
+    with torch.no_grad():
+        for inputs, labels in val_loader:
+            outputs = model(inputs).detach().cpu().numpy()
+            labels = labels.cpu().numpy()
+            
+            gt.append(labels)
+            preds.append(outputs)
+        
+    gt = np.concatenate(gt, axis=0)
+    preds = np.concatenate(preds, axis=0)
+
+    auroc = computeAUROC(gt, preds)
+
+    return auroc
 
 def main():
 
@@ -425,17 +458,17 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         
     
 
-    evaluator = eval_tools.Evaluator(model, criterion, best_metrics,\
-                                     {'train': train_loader,\
-                                      'valid': val_loader,\
-                                      'test': test_loader}, args)
+    # evaluator = eval_tools.Evaluator(model, criterion, best_metrics,\
+    #                                  {'train': train_loader,\
+    #                                   'valid': val_loader,\
+    #                                   'test': test_loader}, args)
 
-    if args.evaluate:
-        evaluator.evaluate('valid', 0)
-        evaluator.evaluate('test', 0)
-        return
+    # if args.evaluate:
+    #     evaluator.evaluate('valid', 0)
+    #     evaluator.evaluate('test', 0)
+    #     return
     
-    evaluator.evaluate('test', 0)
+    # evaluator.evaluate('test', 0)
 
     for epoch in range(args.start_epoch, args.epochs):
         # if args.distributed:
@@ -445,28 +478,30 @@ def main_worker(gpu, ngpus_per_node, args, checkpoint_folder):
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, args, best_metrics)
 
-        evaluator.evaluate('valid', epoch)
-        evaluator.evaluate('test', 0)       # But we should technically not optimize for this
+        # evaluator.evaluate('valid', epoch)
+        # evaluator.evaluate('test', 0)       # But we should technically not optimize for this
 
-        is_best = evaluator.metric_best_vals[args.best_metric] > best_metric_val
-        best_metric_val = max(best_metric_val, evaluator.metric_best_vals[args.best_metric])
+        # is_best = evaluator.metric_best_vals[args.best_metric] > best_metric_val
+        # best_metric_val = max(best_metric_val, evaluator.metric_best_vals[args.best_metric])
+
+        evaluate(val_loader, model, computeAUROC)
 
         if not args.multiprocessing_distributed or \
             (args.multiprocessing_distributed and args.rank % ngpus_per_node == 0 and \
              ((epoch % args.save_epoch == 0) or (epoch == args.epochs - 1))):
-            save_checkpoint(checkpoint_folder, {
-                'epoch': epoch + 1,
-                'arch': args.arch,
-                'state_dict': model.state_dict(),
-                'best_metrics': {metric: evaluator.metric_best_vals[metric] for metric in evaluator.metric_best_vals},
-                'best_metric_val': best_metric_val,
-                'optimizer' : optimizer.state_dict(),
-            }, is_best)
+            # save_checkpoint(checkpoint_folder, {
+            #     'epoch': epoch + 1,
+            #     'arch': args.arch,
+            #     'state_dict': model.state_dict(),
+            #     'best_metrics': {metric: evaluator.metric_best_vals[metric] for metric in evaluator.metric_best_vals},
+            #     'best_metric_val': best_metric_val,
+            #     'optimizer' : optimizer.state_dict(),
+            # }, is_best)
             if epoch == args.start_epoch and args.pretrained:
                 sanity_check(model.state_dict(), args.pretrained,
                              args.semi_supervised)
 
-    evaluator.evaluate('test', epoch + 1)
+    # evaluator.evaluate('test', epoch + 1)
 
 
 def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
