@@ -197,7 +197,10 @@ def evaluate(val_loader, model, computeAUROC):
 
     auroc = computeAUROC(gt, preds)
 
-    return auroc
+    auc_each_class_array = np.array(auroc)
+    result = np.average(auc_each_class_array[auc_each_class_array != 0])
+
+    return result
 
 def main():
 
