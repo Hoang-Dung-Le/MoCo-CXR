@@ -587,11 +587,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         # measure accuracy and record loss
         losses.update(loss.item(), images.size(0))
 
-        auc = evaluate_on_train(output, target)
+        # auc = evaluate_on_train(output, target)
 
-        # print("epoch: ", i + 1)
-        auc_tong_hop += auc
-        mau_so += 1
+        # # print("epoch: ", i + 1)
+        # auc_tong_hop += auc
+        # mau_so += 1
 
         # acc1, acc5 = accuracy(output, target, topk=(1, 5))
         # for metric in best_metrics:
@@ -610,7 +610,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         batch_time.update(time.time() - end)
         end = time.time()
     
-    print("Epoch: ", epoch, " auc : ", auc_tong_hop/mau_so)
+    # print("Epoch: ", epoch, " auc : ", auc_tong_hop/mau_so)
 
     #     if i % args.print_freq == 0:
     #         progress.display(i)
