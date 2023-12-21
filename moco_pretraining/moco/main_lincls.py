@@ -528,7 +528,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
             metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
             result = metric_func(*eval_args)
             
-            metric_meters[metric].update(result, images.size(0))
+            # metric_meters[metric].update(result, images.size(0))
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
@@ -542,7 +542,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         if i % args.print_freq == 0:
             progress.display(i)
 
-    progress.display(i + 1)
+    # progress.display(i + 1)
 
     all_output = np.concatenate(all_output)
     all_gt = np.concatenate(all_gt)
@@ -552,8 +552,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         metric_func = eval_tools.__dict__[best_metrics[metric]['func']]
         result = metric_func(*args)
         
-        metric_meters[metric].update(result, images.size(0))
-    progress.display(i + 1, summary=True)
+        # metric_meters[metric].update(result, images.size(0))
+    # progress.display(i + 1, summary=True)
 
 
 def save_checkpoint(checkpoint_folder, state, is_best, filename='checkpoint.pth.tar'):
