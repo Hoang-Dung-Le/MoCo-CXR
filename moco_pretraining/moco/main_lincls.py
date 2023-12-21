@@ -202,18 +202,14 @@ def evaluate(val_loader, model, computeAUROC):
 
     return result
 
-def evaluate_on_train(images, targets, model, computeAUROC):
-    model.eval()
+def evaluate_on_train(output, targets):
 
     gt = []
     preds = []
-
-    with torch.no_grad():
-        outputs = model(images).detach().cpu().numpy()
-        targets = targets.cpu().numpy()
-        
-        gt.append(targets)
-        preds.append(outputs)
+    targets = targets.cpu().numpy()
+    
+    gt.append(targets)
+    preds.append(output)
         
     gt = np.concatenate(gt, axis=0)
     preds = np.concatenate(preds, axis=0)
@@ -591,7 +587,7 @@ def train(train_loader, model, criterion, optimizer, epoch, args, best_metrics):
         # measure accuracy and record loss
         losses.update(loss.item(), images.size(0))
 
-        auc = evaluate_on_train(images, target, model, computeAUROC)
+        auc = evaluate_on_train(output, target)
 
         # print("epoch: ", i + 1)
         auc_tong_hop += auc
