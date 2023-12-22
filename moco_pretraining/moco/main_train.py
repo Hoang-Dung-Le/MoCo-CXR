@@ -324,7 +324,7 @@ def main():
         num_workers=args.workers, pin_memory=True)
 
 
-
+    print(args.semi_supervised)
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch, args)
 
