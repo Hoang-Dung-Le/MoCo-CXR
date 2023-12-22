@@ -177,16 +177,21 @@ def evaluate(val_loader, model, computeAUROC):
     gt = []
     preds = []
 
+    if torch.cuda.is_available():
+        model = model.to("cuda")  # Đưa model lên GPU nếu có
+
     with torch.no_grad():
-        with tqdm(total=len(val_loader)) as pbar:  # Thêm tqdm vào đây
+        with tqdm(total=len(val_loader)) as pbar:
             for inputs, labels in val_loader:
-                outputs = model(inputs).detach().cpu().numpy()
-                labels = labels.cpu().numpy()
+                if torch.cuda.is_available():
+                    inputs = inputs.cuda(non_blocking=True)
+                    labels = labels.cuda(non_blocking=True)
 
-                gt.append(labels)
-                preds.append(outputs)
+                outputs = model(inputs)
+                preds.append(outputs.cpu().detach().numpy())  # Chuyển output về CPU
+                gt.append(labels.cpu().numpy())
 
-                pbar.update()  # Cập nhật thanh tiến trình
+                pbar.update()
 
     gt = np.concatenate(gt, axis=0)
     preds = np.concatenate(preds, axis=0)
@@ -322,55 +327,41 @@ def main():
 
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch, args)
-        # train(train_loader, model, criterion, optimizer, epoch, args, best_metrics)
+
         print(f'==> Training, epoch {epoch}')
 
-        # Đưa model lên GPU nếu có sẵn
         if torch.cuda.is_available():
-            model.to("cuda")
+            model = model.to("cuda")  # Đưa model lên GPU nếu có
 
-        if args.semi_supervised:
-            model.train()
-        else:
-            model.eval()
-
-        all_output = []
-        all_gt = []
+        model.train()  # Đặt model ở trạng thái train
 
         with tqdm(total=len(train_loader)) as pbar:
             for i, (images, target) in enumerate(train_loader):
-                # Đưa dữ liệu lên GPU nếu có sẵn
                 if torch.cuda.is_available():
                     images = images.cuda(non_blocking=True)
                     target = target.cuda(non_blocking=True)
 
-                all_gt.append(target.cpu().detach().numpy())  # Vẫn chuyển mục tiêu về CPU để lưu trữ
-
                 # Tính toán output
                 output = model(images)
-                all_output.append(output.cpu().detach().numpy())  # Vẫn chuyển output về CPU để lưu trữ
 
+                # Tính toán loss
                 loss = criterion(output, target)
+
+                # Cập nhật trọng số
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
                 pbar.update()
 
-        # Đưa model về CPU để đánh giá
-                
+        # Đánh giá model (model vẫn ở trạng thái train)
         print("-----------evaluate-------------")
-        model.to("cpu")
 
         mRocAUC = evaluate(val_loader, model, computeAUROC)
         print("auc: ", mRocAUC)
 
         if epoch == args.start_epoch and args.pretrained:
             sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
-
-        # Đưa model về GPU lại nếu cần cho epoch tiếp theo
-        if torch.cuda.is_available():
-            model.to("cuda")
 
 
 def save_checkpoint(checkpoint_folder, state, is_best, filename='checkpoint.pth.tar'):
