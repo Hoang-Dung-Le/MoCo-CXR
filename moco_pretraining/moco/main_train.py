@@ -178,13 +178,16 @@ def evaluate(val_loader, model, computeAUROC):
     preds = []
 
     with torch.no_grad():
-        for inputs, labels in val_loader:
-            outputs = model(inputs).detach().cpu().numpy()
-            labels = labels.cpu().numpy()
-            
-            gt.append(labels)
-            preds.append(outputs)
-        
+        with tqdm(total=len(val_loader)) as pbar:  # Thêm tqdm vào đây
+            for inputs, labels in val_loader:
+                outputs = model(inputs).detach().cpu().numpy()
+                labels = labels.cpu().numpy()
+
+                gt.append(labels)
+                preds.append(outputs)
+
+                pbar.update()  # Cập nhật thanh tiến trình
+
     gt = np.concatenate(gt, axis=0)
     preds = np.concatenate(preds, axis=0)
 
@@ -355,6 +358,8 @@ def main():
                 pbar.update()
 
         # Đưa model về CPU để đánh giá
+                
+        print("-----------evaluate-------------")
         model.to("cpu")
 
         mRocAUC = evaluate(val_loader, model, computeAUROC)
