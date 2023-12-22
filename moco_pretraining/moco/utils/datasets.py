@@ -35,6 +35,7 @@ def build_dataset_chest_xray(split, args):
     is_train = (split == 'train')
     # transform = build_transform(is_train, args)
     if args.build_timm_transform:
+        print("build timm trainsform")
         transform = build_transform(is_train, args)
     else:
         if is_train:
