@@ -334,22 +334,25 @@ def main():
         all_output = []
         all_gt = []
 
-        for i, (images, target) in tqdm(enumerate(train_loader)):
-            # Đưa dữ liệu lên GPU nếu có sẵn
-            if torch.cuda.is_available():
-                images = images.cuda(non_blocking=True)
-                target = target.cuda(non_blocking=True)
+        with tqdm(total=len(train_loader)) as pbar:
+            for i, (images, target) in enumerate(train_loader):
+                # Đưa dữ liệu lên GPU nếu có sẵn
+                if torch.cuda.is_available():
+                    images = images.cuda(non_blocking=True)
+                    target = target.cuda(non_blocking=True)
 
-            all_gt.append(target.cpu().detach().numpy())  # Vẫn chuyển mục tiêu về CPU để lưu trữ
+                all_gt.append(target.cpu().detach().numpy())  # Vẫn chuyển mục tiêu về CPU để lưu trữ
 
-            # Tính toán output
-            output = model(images)
-            all_output.append(output.cpu().detach().numpy())  # Vẫn chuyển output về CPU để lưu trữ
+                # Tính toán output
+                output = model(images)
+                all_output.append(output.cpu().detach().numpy())  # Vẫn chuyển output về CPU để lưu trữ
 
-            loss = criterion(output, target)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                loss = criterion(output, target)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                pbar.update()
 
         # Đưa model về CPU để đánh giá
         model.to("cpu")
