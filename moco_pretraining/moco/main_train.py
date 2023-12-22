@@ -319,34 +319,48 @@ def main():
         adjust_learning_rate(optimizer, epoch, args)
         # train(train_loader, model, criterion, optimizer, epoch, args, best_metrics)
         print(f'==> Training, epoch {epoch}')
+
+        # Đưa model lên GPU nếu có sẵn
+        if torch.cuda.is_available():
+            model.to("cuda")
+
         if args.semi_supervised:
             model.train()
         else:
             model.eval()
+
         all_output = []
         all_gt = []
 
         for i, (images, target) in enumerate(train_loader):
-            if args.gpu is not None:
-                images = images.cuda(args.gpu, non_blocking=True)
-            target = target.cuda(args.gpu, non_blocking=True)
-            all_gt.append(target.cpu().detach().numpy())
+            # Đưa dữ liệu lên GPU nếu có sẵn
+            if torch.cuda.is_available():
+                images = images.cuda(non_blocking=True)
+                target = target.cuda(non_blocking=True)
 
-            # compute output
+            all_gt.append(target.cpu().detach().numpy())  # Vẫn chuyển mục tiêu về CPU để lưu trữ
+
+            # Tính toán output
             output = model(images)
-            all_output.append(output.cpu().detach().numpy())
+            all_output.append(output.cpu().detach().numpy())  # Vẫn chuyển output về CPU để lưu trữ
 
             loss = criterion(output, target)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
+        # Đưa model về CPU để đánh giá
+        model.to("cpu")
 
         mRocAUC = evaluate(val_loader, model, computeAUROC)
         print("auc: ", mRocAUC)
+
         if epoch == args.start_epoch and args.pretrained:
-            sanity_check(model.state_dict(), args.pretrained,
-                            args.semi_supervised)
+            sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
+
+        # Đưa model về GPU lại nếu cần cho epoch tiếp theo
+        if torch.cuda.is_available():
+            model.to("cuda")
 
 
 def save_checkpoint(checkpoint_folder, state, is_best, filename='checkpoint.pth.tar'):
