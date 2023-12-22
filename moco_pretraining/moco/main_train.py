@@ -23,6 +23,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 
+from tqdm import tqdm
+
 import training_tools.evaluator as eval_tools
 from training_tools.meters import AverageMeter
 from training_tools.meters import ProgressMeter
@@ -332,7 +334,7 @@ def main():
         all_output = []
         all_gt = []
 
-        for i, (images, target) in enumerate(train_loader):
+        for i, (images, target) in tqdm(enumerate(train_loader)):
             # Đưa dữ liệu lên GPU nếu có sẵn
             if torch.cuda.is_available():
                 images = images.cuda(non_blocking=True)
