@@ -25,17 +25,17 @@ def load_dataset(split, args):
         data_list = getattr(args, f'{split}_list')
 
         if split == "train":
-            return ChestX_ray14(args.data_path, data_list, augment=train_augmentation, num_class=args.num_clases)
+            return ChestX_ray14(args.data_path, data_list, augment=train_augmentation, num_class=args.num_classes)
         elif split == "test" or split == 'val':
-            return ChestX_ray14(args.data_path, data_list, augment=test_augmentation, num_class=args.num_clases)
+            return ChestX_ray14(args.data_path, data_list, augment=test_augmentation, num_class=args.num_classes)
         
     else:
         data_list = getattr(args, f'{split}_list')
         train_augmentation = image_transform.get_transform(args, training=True)
         test_augmentation = image_transform.get_transform(args, training=False)
         if split == "train":
-            return ChestX_ray14(args.data_path, data_list, augment=train_augmentation, num_class=args.num_clases)
+            return ChestX_ray14(args.data_path, data_list, augment=train_augmentation, num_class=args.num_classes)
         elif split == "test" or split == 'val':
-            return ChestX_ray14(args.data_path, data_list, augment=test_augmentation, num_class=args.num_clases)
+            return ChestX_ray14(args.data_path, data_list, augment=test_augmentation, num_class=args.num_classes)
 
 
