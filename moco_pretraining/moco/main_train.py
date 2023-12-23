@@ -255,6 +255,7 @@ def main():
 
     # load from pre-trained, before DistributedDataParallel constructor
     if args.pretrained:
+        print("da load pretrain")
         if os.path.isfile(args.pretrained):
             print("=> loading checkpoint '{}'".format(args.pretrained))
             checkpoint = torch.load(args.pretrained, map_location="cpu")
@@ -337,6 +338,14 @@ def main():
 
     print(args.semi_supervised)
     for epoch in range(args.start_epoch, args.epochs):
+
+        if args.semi_supervised:
+            print("train ne")
+            model.train()
+        else:
+            print("eval nef")
+            model.eval()
+
         adjust_learning_rate(optimizer, epoch, args)
 
         print(f'==> Training, epoch {epoch}')
