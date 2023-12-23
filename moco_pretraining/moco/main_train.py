@@ -172,7 +172,6 @@ def computeAUROC(dataGT, dataPRED, classCount=14):
     return outAUROC
 
 def evaluate(val_loader, model, computeAUROC):
-    model.eval()
 
     gt = []
     preds = []
@@ -339,13 +338,6 @@ def main():
     print(args.semi_supervised)
     for epoch in range(args.start_epoch, args.epochs):
 
-        if args.semi_supervised:
-            print("train ne")
-            model.train()
-        else:
-            print("eval nef")
-            model.eval()
-
         adjust_learning_rate(optimizer, epoch, args)
 
         print(f'==> Training, epoch {epoch}')
@@ -353,7 +345,7 @@ def main():
         if torch.cuda.is_available():
             model = model.to("cuda")  # Đưa model lên GPU nếu có
 
-        model.train()  # Đặt model ở trạng thái train
+        model.eval()  # Đặt model ở trạng thái train
 
         with tqdm(total=len(train_loader)) as pbar:
             for i, (images, target) in enumerate(train_loader):
