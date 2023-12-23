@@ -29,7 +29,7 @@ import training_tools.evaluator as eval_tools
 from training_tools.meters import AverageMeter
 from training_tools.meters import ProgressMeter
 
-from utils.datasets import build_dataset_chest_xray
+from utils.load_dataset import load_dataset
 
 import aihc_utils.storage_util as storage_util
 import aihc_utils.image_transform as image_transform
@@ -105,29 +105,12 @@ parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/06141
 parser.add_argument("--train_list", default=None, type=str, help="file for train list")
 parser.add_argument("--val_list", default=None, type=str, help="file for val list")
 parser.add_argument("--test_list", default=None, type=str, help="file for test list")
-parser.add_argument("--build_timm_transform", action='store_true', default=False)
-parser.add_argument("--aug_strategy", default='default', type=str, help="strategy for data augmentation")
-parser.add_argument("--dataset", default='chestxray', type=str)
-parser.add_argument('--input_size', default=224, type=int,
-                        help='images input size')
-parser.add_argument('--src', action='store_true')
-parser.add_argument("--norm_stats", default=None, type=str)
-parser.add_argument('--reprob', type=float, default=0.25, metavar='PCT',
-                        help='Random erase prob (default: 0.25)')
-parser.add_argument('--remode', type=str, default='pixel',
-                    help='Random erase mode (default: "pixel")')
-parser.add_argument('--recount', type=int, default=1,
-                    help='Random erase count (default: 1)')
-parser.add_argument('--resplit', action='store_true', default=False,
-                        help='Do not random erase first (clean) augmentation split')
-
-parser.add_argument('--color_jitter', type=float, default=None, metavar='PCT',
-                        help='Color jitter factor (enabled only when not using Auto/RandAug)')
-parser.add_argument('--aa', type=str, default='rand-m9-mstd0.5-inc1', metavar='NAME',
-                        help='Use AutoAugment policy. "v0" or "original". " + "(default: rand-m9-mstd0.5-inc1)'),
 
 parser.add_argument('--save-epoch', dest='save_epoch', type=int, default=1,
                     help='Number of epochs per checkpoint save')
+
+parser.add_argument('--num_classes', dest='num_classes', type=int, default=14,
+                    help='Number of classes')
 parser.add_argument('--from-imagenet', dest='from_imagenet', action='store_true',
                     help='use pre-trained ImageNet model')
 parser.add_argument('--best-metric', dest='best_metric', type=str, default='acc@1',
@@ -295,20 +278,10 @@ def main():
                                      betas=(0.9, 0.999),
                                      weight_decay=args.weight_decay)
 
-
-    # if args.optimizer == 'sgd':
-    #     optimizer = torch.optim.SGD(model.fc.parameters(), args.lr,
-    #                                 momentum=args.momentum,
-    #                             weight_decay=args.weight_decay)
-    # elif args.optimizer == 'adam':
-    #     optimizer = torch.optim.Adam(model.fc.parameters(), args.lr,
-    #                              betas=(0.9, 0.999),
-    #                              weight_decay=args.weight_decay)
-
-        
-    train_loader = build_dataset_chest_xray(split='train', args=args)
-    val_loader = build_dataset_chest_xray(split='val', args=args)
-    test_loader = build_dataset_chest_xray(split='test', args=args)
+    
+    train_loader = load_dataset(split='train', args=args)
+    val_loader = load_dataset(split='val', args=args)
+    test_loader = load_dataset(split='test', args=args)
 
 
     train_sampler = None
@@ -330,7 +303,6 @@ def main():
         num_workers=args.workers, pin_memory=True)
 
 
-    print(args.semi_supervised)
     for epoch in range(args.start_epoch, args.epochs):
 
         adjust_learning_rate(optimizer, epoch, args)
