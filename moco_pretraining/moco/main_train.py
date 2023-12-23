@@ -208,7 +208,6 @@ def main():
 
     args = parser.parse_args()
     print(args)
-    # checkpoint_folder = storage_util.get_storage_folder(args.exp_name, f'moco_lincls')
     checkpoint_folder = '/content/drive/MyDrive/dataa/LUAN_VAN/checkpoint_moco_multilabels/'
     if args.seed is not None:
         random.seed(args.seed)
