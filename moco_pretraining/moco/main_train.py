@@ -306,11 +306,6 @@ def main():
     #                              weight_decay=args.weight_decay)
 
         
-
-    if args.aug_setting == 'moco_v2':
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-        
     train_loader = build_dataset_chest_xray(split='train', args=args)
     val_loader = build_dataset_chest_xray(split='val', args=args)
     test_loader = build_dataset_chest_xray(split='test', args=args)
