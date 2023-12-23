@@ -33,7 +33,9 @@ from utils.load_dataset import load_dataset
 
 import aihc_utils.storage_util as storage_util
 import aihc_utils.image_transform as image_transform
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, roc_curve
+
+import matplotlib.pyplot as plt
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
@@ -145,22 +147,30 @@ best_metric_val = 0
 
 def computeAUROC(dataGT, dataPRED, classCount=14):
     outAUROC = []
-    # print(dataGT.shape, dataPRED.shape)
-    # print("ok toi da chay")
+    fprs, tprs, thresholds = [], [], []
+    
     for i in range(classCount):
         try:
-            outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
+            # Calculate ROC curve for each class
+            fpr, tpr, threshold = roc_curve(dataGT[:, i], dataPRED[:, i])
+            roc_auc = roc_auc_score(dataGT[:, i], dataPRED[:, i])
+            outAUROC.append(roc_auc)
+
+            # Store FPR, TPR, and thresholds for each class
+            fprs.append(fpr)
+            tprs.append(tpr)
+            thresholds.append(threshold)
         except:
             outAUROC.append(0.)
-    return outAUROC
+
+    return outAUROC, fprs, tprs, thresholds
 
 def evaluate(val_loader, model, computeAUROC):
-
     gt = []
     preds = []
 
     if torch.cuda.is_available():
-        model = model.to("cuda")  # Đưa model lên GPU nếu có
+        model = model.to("cuda")
 
     with torch.no_grad():
         with tqdm(total=len(val_loader)) as pbar:
@@ -170,7 +180,7 @@ def evaluate(val_loader, model, computeAUROC):
                     labels = labels.cuda(non_blocking=True)
 
                 outputs = model(inputs)
-                preds.append(outputs.cpu().detach().numpy())  # Chuyển output về CPU
+                preds.append(outputs.cpu().detach().numpy())
                 gt.append(labels.cpu().numpy())
 
                 pbar.update()
@@ -178,12 +188,23 @@ def evaluate(val_loader, model, computeAUROC):
     gt = np.concatenate(gt, axis=0)
     preds = np.concatenate(preds, axis=0)
 
-    auroc = computeAUROC(gt, preds)
-
+    auroc, fprs, tprs, thresholds = computeAUROC(gt, preds)
+    # Calculate average ROC AUC score excluding zero values
     auc_each_class_array = np.array(auroc)
     result = np.average(auc_each_class_array[auc_each_class_array != 0])
 
-    return result
+    # Plot ROC curves for each class
+    for i in range(len(fprs)):
+        plt.figure()
+        plt.plot(fprs[i], tprs[i], label=f'Class {i} (AUC = {auroc[i]:.2f})')
+        plt.plot([0, 1], [0, 1], 'k--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title(f'ROC Curve - Class {i}')
+        plt.legend()
+        plt.show()
+
+    return result, auc_each_class_array
 
 def evaluate_on_train(output, targets):
 
@@ -335,8 +356,9 @@ def main():
         # Đánh giá model (model vẫn ở trạng thái train)
         print("-----------evaluate-------------")
 
-        mRocAUC = evaluate(val_loader, model, computeAUROC)
+        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC)
         print("auc: ", mRocAUC)
+        print("auc each class: ", roc_auc_each_class)
 
         if epoch == args.start_epoch and args.pretrained:
             sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
