@@ -286,14 +286,25 @@ def main():
 
     assert len(parameters) == 2  # fc.weight, fc.bias
     
+    # if args.optimizer == 'sgd':
+    #     optimizer = torch.optim.SGD(model.parameters(), args.lr,
+    #                                 momentum=args.momentum,
+    #                                 weight_decay=args.weight_decay)
+    # elif args.optimizer == 'adam':
+    #     optimizer = torch.optim.Adam(model.parameters(), args.lr,
+    #                                  betas=(0.9, 0.999),
+    #                                  weight_decay=args.weight_decay)
+
+
     if args.optimizer == 'sgd':
-        optimizer = torch.optim.SGD(model.parameters(), args.lr,
+        optimizer = torch.optim.SGD(model.fc.parameters(), args.lr,
                                     momentum=args.momentum,
-                                    weight_decay=args.weight_decay)
+                                weight_decay=args.weight_decay)
     elif args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters(), args.lr,
-                                     betas=(0.9, 0.999),
-                                     weight_decay=args.weight_decay)
+        optimizer = torch.optim.Adam(model.fc.parameters(), args.lr,
+                                 betas=(0.9, 0.999),
+                                 weight_decay=args.weight_decay)
+
         
 
     if args.aug_setting == 'moco_v2':
@@ -360,8 +371,8 @@ def main():
         mRocAUC = evaluate(val_loader, model, computeAUROC)
         print("auc: ", mRocAUC)
 
-        # if epoch == args.start_epoch and args.pretrained:
-        #     sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
+        if epoch == args.start_epoch and args.pretrained:
+            sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
 
 
 def save_checkpoint(checkpoint_folder, state, is_best, filename='checkpoint.pth.tar'):
