@@ -5,6 +5,7 @@ import aihc_utils.image_transform as image_transform
 def load_dataset(split, args):
 
     if args.aug_setting == 'moco_v2':
+        print("Vao moco")
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
         
@@ -30,6 +31,7 @@ def load_dataset(split, args):
             return ChestX_ray14(args.data_path, data_list, augment=test_augmentation, num_class=args.num_classes)
         
     else:
+        print("nguoc lai")
         data_list = getattr(args, f'{split}_list')
         train_augmentation = image_transform.get_transform(args, training=True)
         test_augmentation = image_transform.get_transform(args, training=False)
