@@ -165,7 +165,7 @@ def computeAUROC(dataGT, dataPRED, classCount=14):
 
     return outAUROC, fprs, tprs, thresholds
 
-def evaluate(val_loader, model, computeAUROC, num_classes):
+def evaluate(val_loader, model, computeAUROC, num_classes, epoch):
     gt = []
     preds = []
 
@@ -193,16 +193,23 @@ def evaluate(val_loader, model, computeAUROC, num_classes):
     auc_each_class_array = np.array(auroc)
     result = np.average(auc_each_class_array[auc_each_class_array != 0])
 
-    # Plot ROC curves for each class
+    plt.figure(figsize=(10, 8))  # Đặt kích thước hình ảnh chung
+
     for i in range(len(fprs)):
-        plt.figure(figsize=(8, 6))  # Đặt kích thước hình ảnh là 8x6
         plt.plot(fprs[i], tprs[i], label=f'Class {i} (AUC = {auroc[i]:.2f})')
-        plt.plot([0, 1], [0, 1], 'k--')
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(f'ROC Curve - Class {i}')
-        plt.legend()
-        plt.show()
+
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves for all Classes')
+    plt.legend()
+
+    output_file = '/content/roc_auc{epoch}.png'  # Đường dẫn lưu ảnh
+
+    # Lưu hình xuống file
+    plt.savefig(output_file)
+    plt.show()  # Hiển thị hình trên màn hình
+
 
 
     return result, auc_each_class_array
@@ -304,6 +311,8 @@ def main():
         test_loader,
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
+    
+    best_roc_auc = 0
 
 
     for epoch in range(args.start_epoch, args.epochs):
@@ -339,19 +348,28 @@ def main():
         # Đánh giá model (model vẫn ở trạng thái train)
         print("-----------evaluate-------------")
 
-        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC, num_classes)
+        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC, num_classes, epoch)
         print("auc: ", mRocAUC)
         print("auc each class: ", roc_auc_each_class)
+
+        if mRocAUC > best_roc_auc:
+            best_roc_auc = mRocAUC
+            save_checkpoint(checkpoint_folder, {
+                'epoch': epoch + 1,
+                'arch': args.arch,
+                'state_dict': model.state_dict(),
+                'optimizer' : optimizer.state_dict(),
+            })
 
         if epoch == args.start_epoch and args.pretrained:
             sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
 
 
-def save_checkpoint(checkpoint_folder, state, is_best, filename='checkpoint.pth.tar'):
+def save_checkpoint(checkpoint_folder, state, filename='checkpoint.pth.tar'):
     torch.save(state, os.path.join(checkpoint_folder, filename))
-    if is_best:
-        shutil.copyfile(os.path.join(checkpoint_folder, filename),
-                        os.path.join(checkpoint_folder, 'model_best.pth.tar'))
+    # if is_best:
+    #     shutil.copyfile(os.path.join(checkpoint_folder, filename),
+    #                     os.path.join(checkpoint_folder, 'model_best.pth.tar'))
 
 
 def sanity_check(state_dict, pretrained_weights, semi_supervised):
