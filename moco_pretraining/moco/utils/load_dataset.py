@@ -33,8 +33,8 @@ def load_dataset(split, args):
     else:
         print("nguoc lai")
         data_list = getattr(args, f'{split}_list')
-        train_augmentation = image_transform.get_transform(args, training=True)
-        test_augmentation = image_transform.get_transform(args, training=False)
+        train_augmentation = transforms.Compose(image_transform.get_transform(args, training=True))
+        test_augmentation = transforms.Compose(image_transform.get_transform(args, training=False))
         if split == "train":
             return ChestX_ray14(args.data_path, data_list, augment=train_augmentation, num_class=args.num_classes)
         elif split == "test" or split == 'val':
