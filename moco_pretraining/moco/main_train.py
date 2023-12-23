@@ -108,6 +108,8 @@ parser.add_argument("--train_list", default=None, type=str, help="file for train
 parser.add_argument("--val_list", default=None, type=str, help="file for val list")
 parser.add_argument("--test_list", default=None, type=str, help="file for test list")
 
+parser.add_argument("--checkpoint_folder", default=None, type=str, help="checkpoint_folder")
+
 parser.add_argument('--save-epoch', dest='save_epoch', type=int, default=1,
                     help='Number of epochs per checkpoint save')
 
@@ -204,7 +206,7 @@ def evaluate(val_loader, model, computeAUROC, num_classes, epoch):
     plt.title('ROC Curves for all Classes')
     plt.legend()
 
-    output_file = '/content/roc_auc{epoch}.png'  # Đường dẫn lưu ảnh
+    output_file = f'/content/roc_auc{epoch}.png'  # Đường dẫn lưu ảnh
 
     # Lưu hình xuống file
     plt.savefig(output_file)
@@ -219,7 +221,7 @@ def main():
 
     args = parser.parse_args()
     print(args)
-    checkpoint_folder = '/content/drive/MyDrive/dataa/LUAN_VAN/checkpoint_moco_multilabels/'
+    checkpoint_folder = args.checkpoint_folder
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
@@ -354,22 +356,47 @@ def main():
 
         if mRocAUC > best_roc_auc:
             best_roc_auc = mRocAUC
-            save_checkpoint(checkpoint_folder, {
-                'epoch': epoch + 1,
-                'arch': args.arch,
-                'state_dict': model.state_dict(),
-                'optimizer' : optimizer.state_dict(),
-            })
+            save_checkpoint(
+                checkpoint_folder,
+                model,
+                optimizer,
+                epoch
+            )
 
         if epoch == args.start_epoch and args.pretrained:
             sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
 
 
-def save_checkpoint(checkpoint_folder, state, filename='checkpoint.pth.tar'):
-    torch.save(state, os.path.join(checkpoint_folder, filename))
-    # if is_best:
-    #     shutil.copyfile(os.path.join(checkpoint_folder, filename),
-    #                     os.path.join(checkpoint_folder, 'model_best.pth.tar'))
+def save_checkpoint(checkpoint_folder, model, optimizer, epoch, filename='checkpoint.pth.tar'):
+    # Tạo thư mục nếu chưa tồn tại
+    os.makedirs(checkpoint_folder, exist_ok=True)
+    
+    # Lưu thông tin của mô hình, optimizer và epoch vào dictionary
+    state = {
+        'epoch': epoch,
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }
+
+    # Tạo đường dẫn cho file checkpoint
+    checkpoint_path = os.path.join(checkpoint_folder, filename)
+
+    # Lưu checkpoint vào file
+    torch.save(state, checkpoint_path)
+
+    print(f"=> Checkpoint saved: {checkpoint_path}")
+
+def save_model(model, model_folder, filename='model.pth'):
+    # Tạo thư mục nếu chưa tồn tại
+    os.makedirs(model_folder, exist_ok=True)
+
+    # Đường dẫn cho file model
+    model_path = os.path.join(model_folder, filename)
+
+    # Lưu mô hình vào file
+    torch.save(model.state_dict(), model_path)
+
+    print(f"=> Model saved: {model_path}")
 
 
 def sanity_check(state_dict, pretrained_weights, semi_supervised):
