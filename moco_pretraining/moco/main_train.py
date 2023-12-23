@@ -165,7 +165,7 @@ def computeAUROC(dataGT, dataPRED, classCount=14):
 
     return outAUROC, fprs, tprs, thresholds
 
-def evaluate(val_loader, model, computeAUROC):
+def evaluate(val_loader, model, computeAUROC, num_classes):
     gt = []
     preds = []
 
@@ -188,14 +188,14 @@ def evaluate(val_loader, model, computeAUROC):
     gt = np.concatenate(gt, axis=0)
     preds = np.concatenate(preds, axis=0)
 
-    auroc, fprs, tprs, thresholds = computeAUROC(gt, preds)
+    auroc, fprs, tprs, thresholds = computeAUROC(gt, preds, num_classes)
     # Calculate average ROC AUC score excluding zero values
     auc_each_class_array = np.array(auroc)
     result = np.average(auc_each_class_array[auc_each_class_array != 0])
 
     # Plot ROC curves for each class
     for i in range(len(fprs)):
-        plt.figure()
+        plt.figure(figsize=(8, 6))  # Đặt kích thước hình ảnh là 8x6
         plt.plot(fprs[i], tprs[i], label=f'Class {i} (AUC = {auroc[i]:.2f})')
         plt.plot([0, 1], [0, 1], 'k--')
         plt.xlabel('False Positive Rate')
@@ -204,26 +204,9 @@ def evaluate(val_loader, model, computeAUROC):
         plt.legend()
         plt.show()
 
+
     return result, auc_each_class_array
 
-def evaluate_on_train(output, targets):
-
-    gt = []
-    preds = []
-    targets = targets.cpu().numpy()
-    
-    gt.append(targets)
-    preds.append(output)
-        
-    gt = np.concatenate(gt, axis=0)
-    preds = np.concatenate(preds, axis=0)
-
-    auroc = computeAUROC(gt, preds)
-
-    auc_each_class_array = np.array(auroc)
-    result = np.average(auc_each_class_array[auc_each_class_array != 0])
-
-    return result
 
 def main():
 
@@ -249,7 +232,7 @@ def main():
         if name not in ['fc.weight', 'fc.bias']:
             param.requires_grad = False
             
-    num_classes = 14
+    num_classes = args.num_classes
 
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     model.fc.weight.data.normal_(mean=0.0, std=0.01)
@@ -356,7 +339,7 @@ def main():
         # Đánh giá model (model vẫn ở trạng thái train)
         print("-----------evaluate-------------")
 
-        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC)
+        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC, num_classes)
         print("auc: ", mRocAUC)
         print("auc each class: ", roc_auc_each_class)
 
