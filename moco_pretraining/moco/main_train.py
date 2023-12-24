@@ -330,6 +330,13 @@ def main_worker(gpu, ngpus_per_node, args):
                                      betas=(0.9, 0.999),
                                      weight_decay=args.weight_decay)
 
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu") 
+
+    model = model.to(device)
+    criterion = criterion.to(device) 
+    optimizer = optimizer.to(device)
+
     
     train_loader = load_dataset(split='train', args=args)
     val_loader = load_dataset(split='val', args=args)
@@ -373,9 +380,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
         with tqdm(total=len(train_loader)) as pbar:
             for i, (images, target) in enumerate(train_loader):
-                if torch.cuda.is_available():
-                    images = images.cuda(non_blocking=True)
-                    target = target.cuda(non_blocking=True)
+                images, target = images.to(device), target.to(device)
 
                 # Tính toán output
                 output = model(images)
