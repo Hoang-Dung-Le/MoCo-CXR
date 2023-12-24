@@ -175,7 +175,7 @@ from torch.utils.data import Dataset
 
 
 # --------------------------------------------Downstream ChestX-ray14-------------------------------------------
-class ChestX_ray14(Dataset):
+class   ChestX_ray14(Dataset):
     def __init__(self, data_dir, file, augment,
                  num_class=14, img_depth=3, heatmap_path=None,
                  pretraining=False):
