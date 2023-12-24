@@ -216,6 +216,20 @@ def evaluate(val_loader, model, computeAUROC, num_classes, epoch):
 
     return result, auc_each_class_array
 
+def optimizer_to(optim, device):
+    for param in optim.state.values():
+        # Not sure there are any global tensors in the state dict
+        if isinstance(param, torch.Tensor):
+            param.data = param.data.to(device)
+            if param._grad is not None:
+                param._grad.data = param._grad.data.to(device)
+        elif isinstance(param, dict):
+            for subparam in param.values():
+                if isinstance(subparam, torch.Tensor):
+                    subparam.data = subparam.data.to(device)
+                    if subparam._grad is not None:
+                        subparam._grad.data = subparam._grad.data.to(device)
+
 
 def main_worker(gpu, ngpus_per_node, args):
     args.gpu = gpu
@@ -335,7 +349,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     model = model.to(device)
     criterion = criterion.to(device) 
-    optimizer = optimizer.to(device)
+    optimizer_to(optimizer,device)
 
     
     train_loader = load_dataset(split='train', args=args)
