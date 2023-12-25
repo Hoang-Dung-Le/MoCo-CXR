@@ -90,7 +90,7 @@ parser.add_argument('--gpu', default=None, type=int,
 
 
 
-parser.add_argument('--distributed', default=True, type=bool,
+parser.add_argument('--distributed', default=False, type=bool,
                     help='training distributed')
 parser.add_argument('--multiprocessing-distributed', action='store_true',
                     help='Use multi-processing distributed training to launch '
