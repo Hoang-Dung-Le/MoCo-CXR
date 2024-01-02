@@ -270,9 +270,9 @@ def main_worker(gpu, ngpus_per_node, args):
             
     num_classes = args.num_classes
 
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
-    model.fc.weight.data.normal_(mean=0.0, std=0.01)
-    model.fc.bias.data.zero_()
+    model.classifier = nn.Linear(model.classifier.in_features, num_classes)
+    model.classifier.weight.data.normal_(mean=0.0, std=0.01)
+    model.classifier.bias.data.zero_()
 
     # load from pre-trained, before DistributedDataParallel constructor
     if args.pretrained:
