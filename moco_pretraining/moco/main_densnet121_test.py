@@ -340,11 +340,11 @@ def main_worker(gpu, ngpus_per_node, args):
     assert len(parameters) == 2  # fc.weight, fc.bias
     
     if args.optimizer == 'sgd':
-        optimizer = torch.optim.SGD(model.parameters, args.lr,
+        optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                     momentum=args.momentum,
                                     weight_decay=args.weight_decay)
     elif args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters, args.lr,
+        optimizer = torch.optim.Adam(model.parameters(), args.lr,
                                      betas=(0.9, 0.999),
                                      weight_decay=args.weight_decay)
 
