@@ -265,7 +265,7 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # freeze all layers but the last fc
     for name, param in model.named_parameters():
-        if name not in ['fc.weight', 'fc.bias']:
+        if name not in ['classifier.weight', 'classifier.bias']:
             param.requires_grad = False
             
     num_classes = args.num_classes
@@ -276,7 +276,6 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # load from pre-trained, before DistributedDataParallel constructor
     if args.pretrained:
-        print("da load pretrain")
         if os.path.isfile(args.pretrained):
             print("=> loading checkpoint '{}'".format(args.pretrained))
             checkpoint = torch.load(args.pretrained, map_location="cpu")
@@ -285,7 +284,7 @@ def main_worker(gpu, ngpus_per_node, args):
             state_dict = checkpoint['state_dict']
             for k in list(state_dict.keys()):
                 # retain only encoder_q up to before the embedding layer
-                if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.fc'):
+                if k.startswith('module.encoder_q') and not k.startswith('module.encoder_q.classifier'):
                     # remove prefix
                     state_dict[k[len("module.encoder_q."):]] = state_dict[k]
                 # delete renamed or unused k
@@ -481,7 +480,7 @@ def sanity_check(state_dict, pretrained_weights, semi_supervised):
 
     for k in list(state_dict.keys()):
         # only ignore fc layer
-        if 'fc.weight' in k or 'fc.bias' in k:
+        if 'classifier.weight' in k or 'classifier.bias' in k:
             continue
 
         # name in pretrained model
