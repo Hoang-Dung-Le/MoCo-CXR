@@ -358,31 +358,31 @@ def main_worker(gpu, ngpus_per_node, args):
     optimizer_to(optimizer,device)
 
     
-    train_loader = load_dataset(split='train', args=args)
-    val_loader = load_dataset(split='val', args=args)
+    # train_loader = load_dataset(split='train', args=args)
+    # val_loader = load_dataset(split='val', args=args)
     test_loader = load_dataset(split='test', args=args)
 
 
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_loader)
+        train_sampler = torch.utils.data.distributed.DistributedSampler(test_loader)
     else:
         train_sampler = None
 
     
 
     train_loader = torch.utils.data.DataLoader(
-        train_loader, batch_size=args.batch_size, shuffle=(train_sampler is None),
+        test_loader, batch_size=args.batch_size, shuffle=(train_sampler is None),
         num_workers=args.workers, pin_memory=True, sampler=train_sampler)
 
     val_loader = torch.utils.data.DataLoader(
-        val_loader,
-        batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
-
-    test_loader = torch.utils.data.DataLoader(
         test_loader,
         batch_size=args.batch_size, shuffle=False,
         num_workers=args.workers, pin_memory=True)
+
+    # test_loader = torch.utils.data.DataLoader(
+    #     test_loader,
+    #     batch_size=args.batch_size, shuffle=False,
+    #     num_workers=args.workers, pin_memory=True)
     
     best_roc_auc = 0
 
