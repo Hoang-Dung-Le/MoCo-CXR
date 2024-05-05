@@ -387,6 +387,12 @@ def main_worker(gpu, ngpus_per_node, args):
 
     for epoch in range(args.start_epoch, args.epochs):
 
+        print("-----------evaluate-------------")
+
+        mRocAUC, roc_auc_each_class = evaluate(test_loader, model, computeAUROC, num_classes, epoch)
+        print("auc: ", mRocAUC)
+        print("auc each class: ", roc_auc_each_class)
+
         print(f'==> Training, epoch {epoch}')
 
         if torch.cuda.is_available():
