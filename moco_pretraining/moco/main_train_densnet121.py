@@ -204,7 +204,7 @@ def computeAUROC(dataPRED, dataGT, classCount=14):
     # Lưu hình xuống file
     plt.savefig(output_file)
 
-    return result, fprs, tprs, threshold
+    return result, fprs, tprs, thresholds
 
 def evaluate(val_loader, model, computeAUROC, num_classes, epoch):
     gt = []
