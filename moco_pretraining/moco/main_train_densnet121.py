@@ -386,21 +386,11 @@ def main_worker(gpu, ngpus_per_node, args):
 
 
     for epoch in range(args.start_epoch, args.epochs):
-        print("_______________ val_____________")
-        mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC, num_classes, epoch)
-        print("auc: ", mRocAUC)
-        print("auc each class: ", roc_auc_each_class)
-        print("_______________ test _______________")
-        mRocAUC, roc_auc_each_class = evaluate(test_loader, model, computeAUROC, num_classes, epoch)
-        print("auc: ", mRocAUC)
-        print("auc each class: ", roc_auc_each_class)
-        adjust_learning_rate(optimizer, epoch, args)
-        break
 
         print(f'==> Training, epoch {epoch}')
 
         if torch.cuda.is_available():
-            model = model.to("cuda")  # Đưa model lên GPU nếu có
+            model = model.to("cuda") 
 
         model.eval()
 
@@ -408,34 +398,30 @@ def main_worker(gpu, ngpus_per_node, args):
             for i, (images, target) in enumerate(train_loader):
                 images, target = images.to(device), target.to(device)
 
-                # Tính toán output
                 output = model(images)
 
-                # Tính toán loss
                 loss = criterion(output, target)
 
-                # Cập nhật trọng số
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
 
                 pbar.update()
 
-        # Đánh giá model (model vẫn ở trạng thái train)
         print("-----------evaluate-------------")
 
         mRocAUC, roc_auc_each_class = evaluate(val_loader, model, computeAUROC, num_classes, epoch)
         print("auc: ", mRocAUC)
         print("auc each class: ", roc_auc_each_class)
 
-        if mRocAUC > best_roc_auc:
-            best_roc_auc = mRocAUC
-            save_checkpoint(
-                checkpoint_folder,
-                model,
-                optimizer,
-                epoch
-            )
+        filename = f'checkpoint{epoch}.pth.tar'
+        save_checkpoint(
+            checkpoint_folder,
+            model,
+            optimizer,
+            epoch,
+            filename
+        )
 
         if epoch == args.start_epoch and args.pretrained:
             sanity_check(model.state_dict(), args.pretrained, args.semi_supervised)
