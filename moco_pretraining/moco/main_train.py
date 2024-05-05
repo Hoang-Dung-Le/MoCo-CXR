@@ -211,7 +211,7 @@ def evaluate(val_loader, model, computeAUROC, num_classes, epoch):
     plt.title('ROC Curves for all Classes')
     plt.legend()
 
-    output_file = f'/content/roc_auc{epoch}.png'  # Đường dẫn lưu ảnh
+    output_file = f'./roc_auc{epoch}.png'  # Đường dẫn lưu ảnh
 
     # Lưu hình xuống file
     plt.savefig(output_file)
