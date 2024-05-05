@@ -77,16 +77,59 @@ def decorator_detach_tensor(function):
 #         return -1
 #     return auc
 @decorator_detach_tensor
-def computeAUROC(dataGT, dataPRED, classCount=14):
+def computeAUROC(dataPRED, dataGT, classCount=14):
+
     outAUROC = []
-    # print(dataGT.shape, dataPRED.shape)
-    # print("ok toi da chay")
+    fprs, tprs, thresholds = [], [], []
+    
     for i in range(classCount):
         try:
-            outAUROC.append(roc_auc_score(dataGT[:, i], dataPRED[:, i]))
+            # Apply sigmoid to predictions
+            # pred_probs = torch.sigmoid(torch.tensor(dataPRED[:, i]))
+            pred_probs = dataPRED[:, i]
+            print(pred_probs)
+            # print(pred_probs)
+            # print(dataGT[:, i].shape)
+            # print(dataGT)
+            # print("_________________________")
+            # print(pred_probs)
+            # Calculate ROC curve for each class
+            fpr, tpr, threshold = roc_curve(dataGT[:, i], pred_probs)
+            print("fpr ", fpr)
+            print("tpr:", tpr)
+            roc_auc = roc_auc_score(dataGT[:, i], pred_probs)
+            outAUROC.append(roc_auc)
+
+            # Store FPR, TPR, and thresholds for each class
+            fprs.append(fpr)
+            tprs.append(tpr)
+            thresholds.append(threshold)
         except:
             outAUROC.append(0.)
-    return outAUROC
+
+    auc_each_class_array = np.array(outAUROC)
+
+    print("each class: ",auc_each_class_array)
+    # Average over all classes
+    result = np.average(auc_each_class_array[auc_each_class_array != 0])
+    # print(result)
+    plt.figure(figsize=(10, 8))  # Đặt kích thước hình ảnh chung
+
+    for i in range(len(fprs)):
+        plt.plot(fprs[i], tprs[i], label=f'Class {i} (AUC = {outAUROC[i]:.2f})')
+
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves for all Classes')
+    plt.legend()
+
+    output_file = f'/content/roc_auc.png'  # Đường dẫn lưu ảnh
+
+    # Lưu hình xuống file
+    plt.savefig(output_file)
+
+    return result
 
 # def accuracy(output, target, topk=(1,)):
 #     """Computes the accuracy over the k top predictions for the specified values of k"""
